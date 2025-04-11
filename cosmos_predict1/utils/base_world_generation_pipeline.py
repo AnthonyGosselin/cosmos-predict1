@@ -24,6 +24,9 @@ import torch
 from cosmos_predict1.auxiliary.guardrail.common import presets as guardrail_presets
 from cosmos_predict1.auxiliary.t5_text_encoder import CosmosT5TextEncoder
 
+import torch.distributed as dist
+
+
 
 class BaseWorldGenerationPipeline(ABC):
     def __init__(
@@ -76,18 +79,28 @@ class BaseWorldGenerationPipeline(ABC):
         self.text_encoder = None
         self.model = None
 
-        self._load_model()
+        rank = dist.get_rank() if dist.is_initialized() else 0
 
-        if not self.offload_text_encoder_model:
+        print("Loading model")
+        self._load_model()
+        print("Done model")
+
+        if not self.offload_text_encoder_model and rank == 0:
+            print("Loading text encoder")
             self._load_text_encoder_model()
+            print("Done text encoder")
         if not self.disable_guardrail and not self.offload_guardrail_models:
             if self.has_text_input:
                 self._load_text_guardrail()
             self._load_video_guardrail()
         if not self.offload_network:
+            print("Loading network")
             self._load_network()
+            print("Done network")
         if not self.offload_tokenizer:
+            print("Loading tokenizer")
             self._load_tokenizer()
+            print("Done tokenizer")
 
     def _load_tokenizer(self):
         pass

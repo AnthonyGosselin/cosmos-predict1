@@ -44,7 +44,7 @@ cs = ConfigStore.instance()
 
 num_frames = 121
 example_video_dataset = L(Dataset)(
-    dataset_dir="datasets/hdvila",
+    dataset_dir="/network/scratch/a/anthony.gosselin/Datasets/hdvila",
     sequence_interval=1,
     num_frames=num_frames,
     video_size=(720, 1280),
@@ -57,7 +57,7 @@ dataloader_train = L(DataLoader)(
     batch_size=1,
     drop_last=True,
     pin_memory=True,
-    num_workers=8
+    num_workers=4
 )
 dataloader_val = L(DataLoader)(
     dataset=example_video_dataset,
@@ -65,7 +65,7 @@ dataloader_val = L(DataLoader)(
     batch_size=1,
     drop_last=True,
     pin_memory=True,
-    num_workers=8
+    num_workers=4
 )
 
 
@@ -85,8 +85,8 @@ video2world_7b_example_hdvila = LazyDict(
             name="video2world_7b_example_hdvila",
         ),
         optimizer=dict(
-            # lr=2 ** (-14.3),  # 2**(-14.3) approx 5e-5
-            lr=0.0,
+            lr=2 ** (-14.3),  # 2**(-14.3) approx 5e-5
+            # lr=0.0,
             weight_decay=0.1,
             betas=[0.9, 0.99],
             eps=1e-10,
@@ -95,7 +95,7 @@ video2world_7b_example_hdvila = LazyDict(
             save_iter=200,
             # save_iter=1,
             broadcast_via_filesystem=False,
-            load_path="checkpoints/Cosmos-Predict1-7B-Video2World/model.pt",
+            load_path="/network/scratch/a/anthony.gosselin/Models/Cosmos-Predict1-7B-Video2World/model.pt",
             load_training_state=False,
             strict_resume=False,
             keys_not_to_resume=[],

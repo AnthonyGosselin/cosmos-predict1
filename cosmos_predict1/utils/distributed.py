@@ -52,7 +52,9 @@ def init() -> int | None:
     pynvml.nvmlInit()
     local_rank = int(os.getenv("LOCAL_RANK", 0))
     device = Device(local_rank)
-    os.sched_setaffinity(0, device.get_cpu_affinity())
+    # cpu_mask = device.get_cpu_affinity()
+    # if cpu_mask is not None and len(cpu_mask) > 0:
+    #     os.sched_setaffinity(0, device.get_cpu_affinity())
     # Set up NCCL communication.
     os.environ["TORCH_NCCL_BLOCKING_WAIT"] = "0"
     os.environ["TORCH_NCCL_ASYNC_ERROR_HANDLING"] = "1"

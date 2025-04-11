@@ -99,9 +99,9 @@ if __name__ == "__main__":
     parser.add_argument(
         "opts",
         help="""
-Modify config options at the end of the command. For Yacs configs, use
-space-separated "PATH.KEY VALUE" pairs.
-For python-based LazyConfig, use "path.key=value".
+            Modify config options at the end of the command. For Yacs configs, use
+            space-separated "PATH.KEY VALUE" pairs.
+            For python-based LazyConfig, use "path.key=value".
         """.strip(),
         default=None,
         nargs=argparse.REMAINDER,
@@ -116,10 +116,23 @@ For python-based LazyConfig, use "path.key=value".
         action="store_true",
         help="Use only model parallel rank 0 dataloader for faster dataloading! Make sure mock data has same keys as real data.",
     )
+    parser.add_argument(
+        "--model_dir",
+        default="checkpoints",
+        help="Path to the models dir",
+    )
     args = parser.parse_args()
     config_module = get_config_module(args.config)
     config = importlib.import_module(config_module).make_config()
     config = override(config, args.opts)
+
+    # NOTE: Override location for some models that were hardcoded
+    tokenizer_path = os.path.join(args.model_dir, "Cosmos-Tokenize1-CV8x8x8-720p")
+    config.model.vae.enc_fp = os.path.join(tokenizer_path, "encoder.jit")
+    config.model.vae.dec_fp = os.path.join(tokenizer_path, "decoder.jit")
+    config.model.vae.mean_std_fp = os.path.join(tokenizer_path, "mean_std.pt")
+
+    # breakpoint()
     if args.dryrun:
         os.makedirs(config.job.path_local, exist_ok=True)
         LazyConfig.save_yaml(config, f"{config.job.path_local}/config.yaml")

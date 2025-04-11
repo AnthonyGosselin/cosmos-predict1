@@ -15,6 +15,7 @@
 
 import argparse
 import os
+from time import time
 
 import torch
 
@@ -153,11 +154,13 @@ def demo(args):
             continue
 
         # Generate video
+        t = time()
         generated_output = pipeline.generate(
             prompt=current_prompt,
             image_or_video_path=current_image_or_video_path,
             negative_prompt=args.negative_prompt,
         )
+        print(f"Generation time: {time()-t:.2f}")
         if generated_output is None:
             log.critical("Guardrail blocked video2world generation.")
             continue
