@@ -20,6 +20,7 @@ from typing import Any, Optional
 import einops
 import numpy as np
 import torch
+import torch.distributed as dist
 
 from cosmos_predict1.diffusion.inference.inference_utils import (
     generate_world_from_text,
@@ -640,9 +641,23 @@ class DiffusionVideo2WorldGenerationPipeline(DiffusionText2WorldGenerationPipeli
             prompts = [prompt, negative_prompt]
         else:
             prompts = [prompt]
-        prompt_embeddings, _ = self._run_text_embedding_on_prompt_with_offload(prompts)
-        prompt_embedding = prompt_embeddings[0]
-        negative_prompt_embedding = prompt_embeddings[1] if negative_prompt else None
+
+        rank = dist.get_rank() if dist.is_initialized() else 0
+        world_size = dist.get_world_size() if dist.is_initialized() else 1
+
+        if rank == 0:
+            prompt_embeddings, _ = self._run_text_embedding_on_prompt_with_offload(prompts)
+            prompt_embedding = prompt_embeddings[0]
+            negative_prompt_embedding = prompt_embeddings[1] if negative_prompt else None
+            print("Prompt embedding", prompt_embedding.shape, prompt_embedding.dtype)
+        else:
+            prompt_embedding = torch.zeros([1, 512, 1024], dtype=torch.float32, device=rank)
+            negative_prompt_embedding = torch.zeros([1, 512, 1024], dtype=torch.float32, device=rank)
+
+        if world_size > 1:
+            dist.broadcast(prompt_embedding, src=0)
+            dist.broadcast(negative_prompt_embedding, src=0)
+
         log.info("Finish text embedding on prompt")
 
         # Generate video
